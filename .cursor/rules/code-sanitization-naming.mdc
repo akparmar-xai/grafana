@@ -1,0 +1,45 @@
+---
+description: Code sanitization requires variable names to follow a trust and casing convention
+alwaysApply: true
+---
+
+# Code sanitization: variable naming
+
+A value that crosses a trust boundary must be named so a reader can tell whether it is still untrusted or already sanitized. Renaming a value does not sanitize it.
+
+Trust boundaries are HTML, URLs, SQL, dashboard query languages, file paths, and shell commands.
+
+## Trust prefixes
+
+- Untrusted input uses a `raw`, `untrusted`, or `unsafe` prefix: `rawHTML`, `untrustedURL`, `unsafeQuery`.
+- A sanitized value uses a `sanitized`, `escaped`, or `safe` prefix: `sanitizedHTML`, `escapedURL`, `safeQuery`.
+- Use a sanitized prefix only on the return value of a real sanitizer, such as `textUtil.sanitizeUrl`, `html.EscapeString`, or a parameterized query. Do not copy a raw value into a sanitized name.
+- Do not pass a raw-prefixed variable to an HTML, SQL, shell, or URL sink. Sanitize it, bind it as a parameter, or reject it first.
+- At a trust boundary, do not name the value `data`, `value`, `input`, `str`, or `temp`. Those names hide whether the value is safe to render or execute.
+
+```go
+// rawHTML came from the request. Escape it before the name claims it is safe.
+sanitizedHTML := html.EscapeString(rawHTML)
+```
+
+```ts
+// sanitizeUrl returns a safe URL. The sanitized prefix belongs on that result only.
+const sanitizedHref = textUtil.sanitizeUrl(rawHref);
+```
+
+## Casing
+
+Go follows Effective Go and `contribute/backend/style-guide.md`:
+
+- Exported names are MixedCaps. Unexported names are mixedCaps.
+- Initialisms stay uppercase: `userID`, `dashboardURL`, `httpClient`, `orgUID`.
+- Do not use snake_case in Go identifiers.
+
+TypeScript:
+
+- Variables, parameters, and functions are camelCase.
+- Types, interfaces, and React components are PascalCase.
+- Module-level constants are UPPER_SNAKE_CASE.
+- Booleans start with `is`, `has`, `can`, or `should`.
+
+Match the casing already used in the file you are editing. Do not introduce a second convention beside it.
