@@ -24,6 +24,7 @@ Grafana is a monitoring and observability platform. Go backend, TypeScript/React
 - Keep changes focused — avoid over-engineering
 - Separate PRs for frontend and backend changes (deployed at different cadences)
 - Security: prevent XSS, SQL injection, command injection
+- Code sanitization: variable names follow the trust convention in `.cursor/rules/code-sanitization-naming.mdc`. Untrusted values use a `raw`, `untrusted`, or `unsafe` prefix. Sanitized values use a `sanitized`, `escaped`, or `safe` prefix, and only for a sanitizer's return value.
 - Security issues should be reported via [Grafana's security issue reporting page](https://grafana.com/legal/report-a-security-issue/) and not directly in this repository.
 
 ## Comments
