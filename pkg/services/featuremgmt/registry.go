@@ -3414,6 +3414,14 @@ var (
 			Generate:    Generate{React: true},
 		},
 		{
+			Name:        "grafana.notificationCenter",
+			Description: "In-app notification center in the top navigation bar",
+			Stage:       FeatureStageExperimental,
+			Owner:       grafanaFrontendNavigation,
+			Expression:  "false",
+			Generate:    Generate{Go: true, React: true},
+		},
+		{
 			Name:         "grafana.mtFallback",
 			Description:  "Enables multi-tenant fallback behavior",
 			Stage:        FeatureStageExperimental,

@@ -128,6 +128,8 @@ export const FlagKeys = {
   GrafanaNewPanelQueryErrorsUI: "grafana.newPanelQueryErrorsUI",
   /** Enables the new text panel */
   GrafanaNewTextPanel: "grafana.newTextPanel",
+  /** In-app notification center in the top navigation bar */
+  GrafanaNotificationCenter: "grafana.notificationCenter",
   /** Adds a 'Download diagnostics' action that bundles diagnostic artifacts such as HTTP traffic (HAR), server log, dashboard and panel JSONs, and more */
   GrafanaOnDemandDiagnostics: "grafana.onDemandDiagnostics",
   /** Enables firing an event for PanelEditNext feedback that triggers an in-house survey */
@@ -881,6 +883,17 @@ export const useFlagGrafanaNewPanelQueryErrorsUI = (options?: ReactFlagEvaluatio
  */
 export const useFlagGrafanaNewTextPanel = (options?: ReactFlagEvaluationOptions): boolean => {
   return useFlag("grafana.newTextPanel", false, options).value;
+};
+
+/**
+ * In-app notification center in the top navigation bar
+ *
+ * **Details:**
+ * - flag key: `grafana.notificationCenter`
+ * - default value: `false`
+ */
+export const useFlagGrafanaNotificationCenter = (options?: ReactFlagEvaluationOptions): boolean => {
+  return useFlag("grafana.notificationCenter", false, options).value;
 };
 
 /**
