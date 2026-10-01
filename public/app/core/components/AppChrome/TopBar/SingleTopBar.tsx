@@ -26,6 +26,7 @@ import { QuickAdd } from '../QuickAdd/QuickAdd';
 
 import { HelpTopBarButton } from './HelpTopBarButton';
 import { NavRightButton } from './InviteUserButton';
+import { NotificationCenterButton } from './NotificationCenterButton';
 import { ProfileButton } from './ProfileButton';
 import { SignInLink } from './SignInLink';
 import { SingleTopBarActions } from './SingleTopBarActions';
@@ -104,6 +105,7 @@ export const SingleTopBar = memo(function SingleTopBar({
           <TopSearchBarCommandPaletteTrigger />
           {!isSmallScreen && <QuickAdd />}
           <LazyFeatureControlButton />
+          <NotificationCenterButton />
           <HelpTopBarButton isSmallScreen={isSmallScreen} />
           <NavToolbarSeparator />
           {!isSmallScreen && <ExtensionToolbarItem compact={isSmallScreen} />}
