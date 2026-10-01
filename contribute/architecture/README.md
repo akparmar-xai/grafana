@@ -4,3 +4,4 @@ Do you want to make Grafana contributions with bigger impact? These guides help 
 
 - To learn more about the frontend architecture, refer to [Frontend data requests](frontend-data-requests.md).
 - To learn more about the backend architecture, refer to [contribute/backend](/contribute/backend/README.md).
+- For how the main backend and frontend modules depend on each other, refer to [Module dependency map](module-dependencies.md).
