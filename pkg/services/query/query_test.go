@@ -3,6 +3,7 @@ package query
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -759,6 +760,63 @@ func TestIntegrationQueryDataWithQSDSClient(t *testing.T) {
 			Debug: false,
 		}, testClient.queryDataLastCalledWith)
 	})
+}
+
+func TestParseMetricRequestReusesOriginalQueryJSON(t *testing.T) {
+	const original = `{
+		"refId": "A",
+		"datasource": {"type": "prometheus", "uid": "ds-0"},
+		"expr": "up < 1 & down",
+		"intervalMs": 15000,
+		"legendFormat": "{{pod}}"
+	}`
+	body := []byte(`{"from":"1711929600000","to":"1711933200000","queries":[` + original + `]}`)
+	req, err := dtos.UnmarshalMetricRequest(body)
+	require.NoError(t, err)
+
+	svc := &ServiceImpl{
+		log:             log.New("query_data"),
+		dataSourceCache: &fakeDataSourceCache{cache: []*datasources.DataSource{{UID: "ds-0", Type: "prometheus"}}},
+	}
+	parsed, err := svc.parseMetricRequest(context.Background(), &user.SignedInUser{OrgID: 1}, false, req, false)
+	require.NoError(t, err)
+	queries := parsed.getFlattenedQueries()
+	require.Len(t, queries, 1)
+
+	forwarded := queries[0].query.JSON
+	require.JSONEq(t, original, string(forwarded))
+	remarshaled, err := req.Queries[0].MarshalJSON()
+	require.NoError(t, err)
+	require.JSONEq(t, string(remarshaled), string(forwarded))
+
+	// The copy handed to the plugin must not alias the bytes retained on the request.
+	forwarded[0] = 'X'
+	require.Equal(t, byte('{'), req.RawQuery(0)[0])
+
+	// A per-query time range is still removed before the plugin sees the model.
+	withRange := []byte(`{"from":"1","to":"2","queries":[{"refId":"A","datasource":{"type":"prometheus","uid":"ds-0"},"expr":"up","timeRange":{"from":"10","to":"20"}}]}`)
+	req, err = dtos.UnmarshalMetricRequest(withRange)
+	require.NoError(t, err)
+	parsed, err = svc.parseMetricRequest(context.Background(), &user.SignedInUser{OrgID: 1}, false, req, true)
+	require.NoError(t, err)
+	require.NotContains(t, string(parsed.getFlattenedQueries()[0].query.JSON), "timeRange")
+	require.JSONEq(t, `{"refId":"A","datasource":{"type":"prometheus","uid":"ds-0"},"expr":"up"}`, string(parsed.getFlattenedQueries()[0].query.JSON))
+
+	// Mixed-datasource dispatch keeps the original JSON for the subset it re-parses.
+	sub := req.CloneWithQueries([]*simplejson.Json{req.Queries[0]})
+	require.JSONEq(t, string(req.RawQuery(0)), string(sub.RawQuery(0)))
+}
+
+func TestQueryServiceMarshalMatchesSimpleJSON(t *testing.T) {
+	var q data.DataQuery
+	require.NoError(t, json.Unmarshal([]byte(`{"refId":"A","datasource":{"type":"prometheus","uid":"ds-0"},"expr":"up","intervalMs":15000,"legendFormat":"{{pod}}"}`), &q))
+	raw, err := json.Marshal(q)
+	require.NoError(t, err)
+	parsed, err := simplejson.NewJson(raw)
+	require.NoError(t, err)
+	again, err := parsed.MarshalJSON()
+	require.NoError(t, err)
+	require.JSONEq(t, string(raw), string(again))
 }
 
 func TestQueryToJson(t *testing.T) {

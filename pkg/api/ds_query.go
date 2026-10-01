@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -67,15 +69,14 @@ func (hs *HTTPServer) getDSQueryEndpoint() web.Handler {
 // 403: forbiddenError
 // 500: internalServerError
 func (hs *HTTPServer) QueryMetricsV2(c *contextmodel.ReqContext) response.Response {
-	reqDTO := dtos.MetricRequest{}
-	if err := web.Bind(c.Req, &reqDTO); err != nil {
+	reqDTO, err := readMetricRequest(c.Req)
+	if err != nil {
 		return response.Error(http.StatusBadRequest, "bad request data", err)
 	}
 
 	handleTimeInQuery := c.Req.Header.Get("X-Query-V2") == "true"
 
 	var resp *backend.QueryDataResponse
-	var err error
 
 	hs.log.Debug("QueryMetricsV2: request received", "time_in_query", handleTimeInQuery)
 	if handleTimeInQuery {
@@ -88,6 +89,36 @@ func (hs *HTTPServer) QueryMetricsV2(c *contextmodel.ReqContext) response.Respon
 		return hs.handleQueryMetricsError(err)
 	}
 	return hs.toJsonStreamingResponse(c.Req.Context(), resp)
+}
+
+// readMetricRequest decodes the /ds/query body and keeps each query's original JSON
+// so the query service can forward it without encoding the parsed tree again.
+// Content-type and size checks match web.Bind.
+func readMetricRequest(req *http.Request) (dtos.MetricRequest, error) {
+	if req.Body == nil {
+		return dtos.MetricRequest{}, errors.New("bad request data")
+	}
+	mediaType, _, err := mime.ParseMediaType(req.Header.Get("Content-type"))
+	if err != nil {
+		return dtos.MetricRequest{}, err
+	}
+	if mediaType != "application/json" {
+		return dtos.MetricRequest{}, errors.New("bad content type")
+	}
+	defer func() { _ = req.Body.Close() }()
+	body := http.MaxBytesReader(nil, req.Body, web.MaxBindBodyBytes)
+	buf, err := io.ReadAll(body)
+	if err != nil {
+		return dtos.MetricRequest{}, err
+	}
+	if len(buf) == 0 {
+		return dtos.MetricRequest{}, nil
+	}
+	metricReq, err := dtos.UnmarshalMetricRequest(buf)
+	if err != nil {
+		return dtos.MetricRequest{}, err
+	}
+	return metricReq, nil
 }
 
 func (hs *HTTPServer) toJsonStreamingResponse(ctx context.Context, qdr *backend.QueryDataResponse) response.Response {

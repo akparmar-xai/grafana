@@ -6,11 +6,31 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
 	"github.com/grafana/grafana/pkg/services/user"
 	"github.com/grafana/grafana/pkg/setting"
 )
+
+func TestUnmarshalMetricRequestKeepsQueryJSON(t *testing.T) {
+	req, err := UnmarshalMetricRequest([]byte(`{"from":"1","to":"2","debug":true,"queries":[{"refId":"A"},null,{"refId":"B"}]}`))
+	require.NoError(t, err)
+	require.True(t, req.Debug)
+	require.Len(t, req.Queries, 3)
+	require.Nil(t, req.Queries[1])
+	require.Nil(t, req.RawQuery(1))
+	require.JSONEq(t, `{"refId":"A"}`, string(req.RawQuery(0)))
+
+	sub := req.CloneWithQueries([]*simplejson.Json{req.Queries[2]})
+	require.JSONEq(t, `{"refId":"B"}`, string(sub.RawQuery(0)))
+	empty := req.CloneWithQueries(nil)
+	require.Nil(t, empty.RawQuery(0))
+
+	blank, err := UnmarshalMetricRequest(nil)
+	require.NoError(t, err)
+	require.Empty(t, blank.Queries)
+}
 
 func TestGetUniqueDatasourceTypes(t *testing.T) {
 	testcases := []struct {
