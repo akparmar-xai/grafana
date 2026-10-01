@@ -161,4 +161,9 @@ export type CtaClicked = EventVariants<
       action: 'view_alerts' | 'view_incidents';
       placement: 'pill';
     })
+  | {
+      surface: 'learn_tips';
+      action: 'open_datasources' | 'open_explore' | 'open_dashboard' | 'open_alerting' | 'open_docs';
+      placement: 'card' | 'footer';
+    }
 >;

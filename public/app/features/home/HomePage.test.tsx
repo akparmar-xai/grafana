@@ -168,6 +168,16 @@ describe('HomePage', () => {
     expect(await screen.findByText('Welcome to Grafana.')).toBeInTheDocument();
   });
 
+  it('shows starting tips that link into the first Grafana workflows', async () => {
+    render(<HomePage />);
+
+    expect(await screen.findByRole('heading', { name: 'Start here' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Add a data source' })).toHaveAttribute('href', '/connections/datasources');
+    expect(screen.getByRole('link', { name: 'Open Explore' })).toHaveAttribute('href', '/explore');
+    expect(screen.getByRole('link', { name: 'New dashboard' })).toHaveAttribute('href', '/dashboard/new');
+    expect(screen.getByRole('link', { name: 'View alert rules' })).toHaveAttribute('href', '/alerting/list');
+  });
+
   it('renders dashboard tabs and auto-switches to starred', async () => {
     render(<HomePage />);
 

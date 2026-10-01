@@ -11304,6 +11304,36 @@
       "view-all": "View all incidents"
     },
     "learn-more": "Learn more",
+    "learn-tips": {
+      "cards": {
+        "alerting": {
+          "cta": "View alert rules",
+          "description": "An alert rule repeats a query and fires when the result crosses a condition. Firing alerts show up on this page. The rules themselves live under Alerting.",
+          "title": "Alert when a value is wrong"
+        },
+        "connect-data": {
+          "cta": "Add a data source",
+          "description": "Grafana queries data that lives somewhere else. Add Prometheus, Loki, or the built-in TestData source. Dashboards and alerts both run against it.",
+          "title": "Connect a data source"
+        },
+        "dashboard": {
+          "cta": "New dashboard",
+          "description": "A dashboard is the page you share: panels, a time picker, and optional variables such as a host or namespace. Add a panel from the query you tried, then save.",
+          "title": "Save a dashboard"
+        },
+        "explore": {
+          "cta": "Open Explore",
+          "description": "Explore is a scratch pad. Pick the data source, run a query, and move the time range until the result looks right. Nothing is saved until you decide to keep it.",
+          "title": "Run a query in Explore"
+        }
+      },
+      "docs": "Getting started guide",
+      "hidden": "Starting tips are hidden.",
+      "hide": "Hide tips",
+      "intro": "Grafana shows metrics, logs, and traces that live somewhere else. Connect that data, query it, and save the view as a dashboard. Do these four steps in order. Below them are dashboards you have opened, alerts that are firing, and the Grafana blog.",
+      "show": "Show tips",
+      "title": "Start here"
+    },
     "most-used-dashboards-tab": {
       "empty": "Most used dashboards will appear here.",
       "empty-description": "Once your organization has dashboards and usage data has been collected, dashboards with the most views over the last 30 days will be displayed here.",
