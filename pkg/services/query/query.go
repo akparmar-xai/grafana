@@ -361,16 +361,31 @@ func getTimeRange(query *simplejson.Json, globalFrom string, globalTo string) (s
 const timeRangeKey = "timeRange"
 
 func queryToJson(query *simplejson.Json, supportLocalTimeRange bool) ([]byte, error) {
-	if !supportLocalTimeRange {
-		return query.MarshalJSON()
+	return queryToJSON(query, nil, supportLocalTimeRange)
+}
+
+func queryToJSON(query *simplejson.Json, raw []byte, supportLocalTimeRange bool) ([]byte, error) {
+	if supportLocalTimeRange {
+		// we need to remove the `timeRange` attribute from the JSON, if it exists there,
+		// because it might cause complications with certain data sources.
+		_, has := query.CheckGet(timeRangeKey)
+		if has {
+			return queryJSONWithoutTimeRange(query)
+		}
 	}
 
-	// we need to remove the `timeRange` attribute from the JSON, if it exists there,
-	// because it might cause complications with certain data sources.
-	_, has := query.CheckGet(timeRangeKey)
-	if !has {
-		return query.MarshalJSON()
+	// The request JSON was just decoded. Forward those bytes instead of walking the
+	// parsed tree through encoding/json again. Copy so a plugin cannot mutate the
+	// bytes still held by the request.
+	if len(raw) > 0 {
+		out := make([]byte, len(raw))
+		copy(out, raw)
+		return out, nil
 	}
+	return query.MarshalJSON()
+}
+
+func queryJSONWithoutTimeRange(query *simplejson.Json) ([]byte, error) {
 
 	qMap, err := query.Map()
 	if err != nil {
@@ -406,7 +421,7 @@ func (s *ServiceImpl) parseMetricRequest(ctx context.Context, user identity.Requ
 
 	// Parse the queries and store them by datasource
 	datasourcesByUid := map[string]*datasources.DataSource{}
-	for _, query := range reqDTO.Queries {
+	for i, query := range reqDTO.Queries {
 		ds, err := s.getDataSourceFromQuery(ctx, user, skipDSCache, query, datasourcesByUid)
 		if err != nil {
 			return nil, err
@@ -437,7 +452,7 @@ func (s *ServiceImpl) parseMetricRequest(ctx context.Context, user identity.Requ
 			timeRange = gtime.NewTimeRange(reqDTO.From, reqDTO.To)
 		}
 
-		modelJSON, err := queryToJson(query, supportLocalTimeRange)
+		modelJSON, err := queryToJSON(query, reqDTO.RawQuery(i), supportLocalTimeRange)
 		if err != nil {
 			return nil, err
 		}

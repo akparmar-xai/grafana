@@ -240,6 +240,7 @@ func prepareQuery(
 ) (*preparedQuery, error) {
 	// Normalize DS refs and build []*simplejson.Json
 	jsonQueries := make([]*simplejson.Json, 0, len(raw.Queries))
+	rawJSON := make([][]byte, 0, len(raw.Queries))
 	for _, q := range raw.Queries {
 		if dsRef, derr := getValidDataSourceRef(ctx, q.Datasource, q.DatasourceID, b.legacyDatasourceLookup); derr != nil {
 			connectLogger.Error("error getting valid datasource ref", "err", derr)
@@ -258,6 +259,7 @@ func prepareQuery(
 		}
 
 		jsonQueries = append(jsonQueries, sjQuery)
+		rawJSON = append(rawJSON, jsonBytes)
 	}
 
 	mReq := dtos.MetricRequest{
@@ -265,6 +267,9 @@ func prepareQuery(
 		To:      raw.To,
 		Queries: jsonQueries,
 	}
+	// parseMetricRequest would otherwise encode each query again. Time-range stripping
+	// still re-encodes when a query carries its own timeRange.
+	mReq.SetRawQueries(rawJSON)
 
 	cache := &MyCacheService{
 		legacy: b.legacyDatasourceLookup,

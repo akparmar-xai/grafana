@@ -1,8 +1,12 @@
 package dtos
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -74,6 +78,69 @@ type MetricRequest struct {
 	Queries []*simplejson.Json `json:"queries"`
 	// required: false
 	Debug bool `json:"debug"`
+
+	// rawQueries holds the original JSON of each query, parallel to Queries, when the
+	// request was decoded from JSON or a caller already has those bytes. The query
+	// service forwards them to plugins instead of encoding the parsed tree again.
+	// Requests built in code leave this nil and fall back to encoding.
+	rawQueries [][]byte
+}
+
+// UnmarshalMetricRequest decodes a dashboard query request and keeps each query's
+// original JSON. Null query elements stay nil, matching encoding/json's pointer rules.
+func UnmarshalMetricRequest(b []byte) (MetricRequest, error) {
+	var wire struct {
+		From    string            `json:"from"`
+		To      string            `json:"to"`
+		Queries []json.RawMessage `json:"queries"`
+		Debug   bool              `json:"debug"`
+	}
+	dec := json.NewDecoder(bytes.NewReader(b))
+	if err := dec.Decode(&wire); err != nil {
+		// An empty body is not a decode failure. web.Bind treats io.EOF the same way.
+		if errors.Is(err, io.EOF) {
+			return MetricRequest{}, nil
+		}
+		return MetricRequest{}, err
+	}
+
+	queries := make([]*simplejson.Json, len(wire.Queries))
+	raw := make([][]byte, len(wire.Queries))
+	for i, q := range wire.Queries {
+		if bytes.Equal(bytes.TrimSpace(q), []byte("null")) {
+			continue
+		}
+		parsed, err := simplejson.NewJson(q)
+		if err != nil {
+			return MetricRequest{}, fmt.Errorf("query %d: %w", i, err)
+		}
+		queries[i] = parsed
+		raw[i] = q
+	}
+	return MetricRequest{
+		From:       wire.From,
+		To:         wire.To,
+		Queries:    queries,
+		Debug:      wire.Debug,
+		rawQueries: raw,
+	}, nil
+}
+
+// SetRawQueries attaches original query JSON parallel to Queries.
+// A nil or mismatched slice is ignored and encoding falls back to the parsed tree.
+func (mr *MetricRequest) SetRawQueries(raw [][]byte) {
+	if len(raw) != len(mr.Queries) {
+		return
+	}
+	mr.rawQueries = raw
+}
+
+// RawQuery returns the original JSON for query i, or nil when it is not available.
+func (mr MetricRequest) RawQuery(i int) []byte {
+	if i < 0 || i >= len(mr.rawQueries) {
+		return nil
+	}
+	return mr.rawQueries[i]
 }
 
 func (mr *MetricRequest) GetUniqueDatasourceTypes() []string {
@@ -96,12 +163,29 @@ func (mr *MetricRequest) GetUniqueDatasourceTypes() []string {
 }
 
 func (mr *MetricRequest) CloneWithQueries(queries []*simplejson.Json) MetricRequest {
-	return MetricRequest{
+	clone := MetricRequest{
 		From:    mr.From,
 		To:      mr.To,
 		Queries: queries,
 		Debug:   mr.Debug,
 	}
+	if len(mr.rawQueries) == 0 {
+		return clone
+	}
+	raw := make([][]byte, len(queries))
+	for i, q := range queries {
+		if q == nil {
+			continue
+		}
+		for j := range mr.Queries {
+			if mr.Queries[j] == q && j < len(mr.rawQueries) {
+				raw[i] = mr.rawQueries[j]
+				break
+			}
+		}
+	}
+	clone.rawQueries = raw
+	return clone
 }
 
 func GetGravatarUrl(cfg *setting.Cfg, text string) string {
