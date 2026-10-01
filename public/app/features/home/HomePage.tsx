@@ -27,6 +27,7 @@ import { HeaderActions } from './HeaderActions';
 import { HomeGrid } from './HomeGrid';
 import { HomePageSkeleton } from './HomePageSkeleton';
 import { HomeSection } from './HomeSection';
+import { LearningTips } from './LearningTips/LearningTips';
 import { Overview } from './Overview/Overview';
 import { resolveOverviewCard } from './Overview/solutionGroups';
 import { Recommendations } from './Recommendations/Recommendations';
@@ -201,6 +202,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
+                  <LearningTips />
                   <HomeSection direction="column" display="flex" gap={2}>
                     {/* Assistant injects an Assistant-based prompt input when available */}
                     {renderLimitedComponents({
