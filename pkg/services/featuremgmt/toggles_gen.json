@@ -2725,6 +2725,19 @@
     },
     {
       "metadata": {
+        "name": "grafana.notificationCenter",
+        "resourceVersion": "1790875127403",
+        "creationTimestamp": "2026-10-01T17:18:47Z"
+      },
+      "spec": {
+        "description": "In-app notification center in the top navigation bar",
+        "stage": "experimental",
+        "codeowner": "@grafana/grafana-frontend-navigation",
+        "expression": "false"
+      }
+    },
+    {
+      "metadata": {
         "name": "grafana.ofrepRootUrl",
         "resourceVersion": "1789554268270",
         "creationTimestamp": "2026-09-16T10:24:28Z"

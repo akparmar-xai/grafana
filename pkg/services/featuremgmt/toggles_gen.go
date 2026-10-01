@@ -1049,4 +1049,8 @@ const (
 	// FlagUnifiedStorageClientOnBehalfOf
 	// Exchange unified storage calls on behalf of the calling user when the verified access token already carries them, instead of calling as the service
 	FlagUnifiedStorageClientOnBehalfOf = "unifiedStorageClient.onBehalfOf"
+
+	// FlagGrafanaNotificationCenter
+	// In-app notification center in the top navigation bar
+	FlagGrafanaNotificationCenter = "grafana.notificationCenter"
 )

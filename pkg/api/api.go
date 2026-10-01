@@ -305,6 +305,10 @@ func (hs *HTTPServer) registerRoutes() {
 			userRoute.Put("/preferences", routing.Wrap(hs.UpdateUserPreferences))
 			userRoute.Patch("/preferences", routing.Wrap(hs.PatchUserPreferences))
 
+			userRoute.Get("/notifications", routing.Wrap(hs.GetUserNotifications))
+			userRoute.Get("/notifications/unread-count", routing.Wrap(hs.GetUserNotificationUnreadCount))
+			userRoute.Post("/notifications/read", routing.Wrap(hs.MarkUserNotificationsRead))
+
 			userRoute.Get("/auth-tokens", requestmeta.SetOwner(requestmeta.TeamAuth), routing.Wrap(hs.GetUserAuthTokens))
 			userRoute.Post("/revoke-auth-token", requestmeta.SetOwner(requestmeta.TeamAuth), routing.Wrap(hs.RevokeUserAuthToken))
 		}, reqSignedInNoAnonymous)

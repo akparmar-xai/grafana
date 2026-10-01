@@ -83,6 +83,7 @@ import (
 	loginAttempt "github.com/grafana/grafana/pkg/services/loginattempt"
 	"github.com/grafana/grafana/pkg/services/navtree"
 	"github.com/grafana/grafana/pkg/services/ngalert"
+	"github.com/grafana/grafana/pkg/services/notificationcenter"
 	"github.com/grafana/grafana/pkg/services/notifications"
 	"github.com/grafana/grafana/pkg/services/oauthtoken"
 	"github.com/grafana/grafana/pkg/services/org"
@@ -202,6 +203,7 @@ type HTTPServer struct {
 	starService                  star.Service
 	apiKeyService                apikey.Service
 	kvStore                      kvstore.KVStore
+	notificationCenter           *notificationcenter.Service
 	pluginsCDNService            *pluginscdn.Service
 	managedPluginsService        managedplugins.Manager
 
@@ -367,6 +369,7 @@ func ProvideHTTPServer(opts ServerOptions, cfg *setting.Cfg, routeRegister routi
 		starService:                  starService,
 		apiKeyService:                apiKeyService,
 		kvStore:                      kvStore,
+		notificationCenter:           notificationcenter.ProvideService(kvStore),
 		PublicDashboardsApi:          pubdashApi,
 		userService:                  userService,
 		tempUserService:              tempUserService,
